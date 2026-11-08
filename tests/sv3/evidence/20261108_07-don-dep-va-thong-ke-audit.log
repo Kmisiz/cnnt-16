@@ -1,0 +1,52 @@
+=== Sun Nov  8 18:59:58 UTC 2026 don dep user thu ===
+DELETE 1
+DELETE 1
+ username |   role   | is_active 
+----------+----------+-----------
+ user1    | customer | t
+ user2    | customer | t
+ teller   | teller   | t
+ admin    | admin    | t
+(4 rows)
+
+ account_no |   balance   
+------------+-------------
+ 1900888801 | 48996000.00
+ 1900888802 | 21004000.00
+(2 rows)
+
+=== Thong ke audit_logs theo hanh dong/ket qua ===
+      action      | status  | count 
+------------------+---------+-------
+ ADMIN_PATH_PROBE | DENIED  |     4
+ CREATE_USER      | SUCCESS |     2
+ LIST_ACCOUNTS    | SUCCESS |     2
+ LOCK_USER        | SUCCESS |     2
+ LOGIN            | DENIED  |     2
+ LOGIN            | FAILED  |    15
+ LOGIN            | SUCCESS |    22
+ RBAC             | DENIED  |    19
+ TOKEN_INVALID    | DENIED  |     8
+ TRANSFER         | FAILED  |     2
+ TRANSFER         | SUCCESS |    70
+ UNLOCK_USER      | SUCCESS |     2
+ VIEW_ACCOUNT     | SUCCESS |     6
+(13 rows)
+
+=== 12 dong gan nhat ===
+   gio    | username |  action  | status  |  client_ip  |               chi_tiet               
+----------+----------+----------+---------+-------------+--------------------------------------
+ 18:59:56 | user2    | TRANSFER | SUCCESS | 10.10.10.20 | 1900888802 -> 1900888801 amount=1000
+ 18:59:56 | user2    | TRANSFER | SUCCESS | 10.10.10.20 | 1900888802 -> 1900888801 amount=1000
+ 18:59:56 | user1    | TRANSFER | SUCCESS | 10.10.10.20 | 1900888801 -> 1900888802 amount=1000
+ 18:59:56 | user2    | TRANSFER | SUCCESS | 10.10.10.20 | 1900888802 -> 1900888801 amount=1000
+ 18:59:56 | user2    | TRANSFER | SUCCESS | 10.10.10.20 | 1900888802 -> 1900888801 amount=1000
+ 18:59:56 | user2    | TRANSFER | SUCCESS | 10.10.10.20 | 1900888802 -> 1900888801 amount=1000
+ 18:59:56 | user1    | TRANSFER | SUCCESS | 10.10.10.20 | 1900888801 -> 1900888802 amount=1000
+ 18:59:56 | user1    | TRANSFER | SUCCESS | 10.10.10.20 | 1900888801 -> 1900888802 amount=1000
+ 18:59:56 | user1    | TRANSFER | SUCCESS | 10.10.10.20 | 1900888801 -> 1900888802 amount=1000
+ 18:59:56 | user2    | TRANSFER | SUCCESS | 10.10.10.20 | 1900888802 -> 1900888801 amount=1000
+ 18:59:56 | user1    | TRANSFER | SUCCESS | 10.10.10.20 | 1900888801 -> 1900888802 amount=1000
+ 18:59:56 | user1    | TRANSFER | SUCCESS | 10.10.10.20 | 1900888801 -> 1900888802 amount=1000
+(12 rows)
+

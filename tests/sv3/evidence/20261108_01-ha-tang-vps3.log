@@ -1,0 +1,93 @@
+=== Sun Nov  8 18:59:18 UTC 2026 vps3 ===
+--- [1] Dich vu & cong mang
+active
+enabled
+LISTEN 0      244      10.10.10.30:5432      0.0.0.0:*          
+LISTEN 0      244        127.0.0.1:5432      0.0.0.0:*          
+LISTEN 0      128          0.0.0.0:22        0.0.0.0:*          
+LISTEN 0      128             [::]:22           [::]:*          
+--- [2] pg_hba (dong khong phai comment)
+local   all             postgres                                peer
+local   all             all                                     peer
+host    all             all             127.0.0.1/32            scram-sha-256
+host    all             all             ::1/128                 scram-sha-256
+local   replication     all                                     peer
+host    replication     all             127.0.0.1/32            scram-sha-256
+host    replication     all             ::1/128                 scram-sha-256
+host    digital_bank    bank_app    10.10.10.20/32    scram-sha-256
+--- [3] Thong so bao mat
+localhost,10.10.10.30
+scram-sha-256
+on
+--- [4] Thuoc tinh role bank_app (phai khong co quyen dac biet)
+ rolname  | rolsuper | rolcreatedb | rolcreaterole | rolreplication | rolbypassrls | rolcanlogin 
+----------+----------+-------------+---------------+----------------+--------------+-------------
+ postgres | t        | t           | t             | t              | t            | t
+ bank_app | f        | f           | f             | f              | f            | t
+(2 rows)
+
+--- [5] Quyen tren database/schema
+   datname    |                   datacl                    
+--------------+---------------------------------------------
+ digital_bank | {postgres=CTc/postgres,bank_app=c/postgres}
+(1 row)
+
+ nspname |                         nspacl                         
+---------+--------------------------------------------------------
+ public  | {postgres=UC/postgres,bank_app=U/postgres,=U/postgres}
+(1 row)
+
+--- [6] Owner cac bang (bank_app khong duoc la owner)
+  tablename   | tableowner 
+--------------+------------
+ accounts     | postgres
+ audit_logs   | postgres
+ transactions | postgres
+ users        | postgres
+(4 rows)
+
+--- [7] Quyen bank_app tren tung bang
+  table_name  |        quyen         
+--------------+----------------------
+ accounts     | INSERT,SELECT,UPDATE
+ audit_logs   | INSERT,SELECT
+ transactions | INSERT,SELECT,UPDATE
+ users        | INSERT,SELECT,UPDATE
+(4 rows)
+
+--- [8] UFW
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), disabled (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW IN    10.10.10.40               
+5432/tcp                   ALLOW IN    10.10.10.20               
+
+--- [9] Sao luu
+total 8
+-rw------- 1 root root 2048 Nov  8 18:37 digital_bank_20261108_183725.sql.gz.enc
+-rw------- 1 root root 2752 Nov  8 18:40 digital_bank_20261108_184024.sql.gz.enc
+700 postgres:postgres /var/backups/postgres
+600 root:root /root/.backup_passphrase
+700 root:root /usr/local/bin/backup_bank_db.sh
+cron:
+0 2 * * * /usr/local/bin/backup_bank_db.sh
+--- [10] Kiem tra toan ven file backup moi nhat
+file: /var/backups/postgres/digital_bank_20261108_184024.sql.gz.enc
+giai ma dung khoa + gzip -t: OK
+giai ma SAI khoa phai that bai: 0 byte doc duoc (0 = tot)
+noi dung dump co chua du lieu thuong khong (grep ten user trong file ma hoa): 0
+so dong COPY trong dump:
+4
+syslog BANK_BACKUP:
+Nov  8 18:37:25 vps3-data-db BANK_BACKUP: BACKUP_SUCCESS: Created encrypted backup /var/backups/postgres/digital_bank_20261108_183725.sql.gz.enc
+Nov  8 18:40:24 vps3-data-db BANK_BACKUP: BACKUP_SUCCESS: Created encrypted backup /var/backups/postgres/digital_bank_20261108_184024.sql.gz.enc
+--- [11] Chuyen syslog sang vps4 (SIEM)?
+KHONG co cau hinh chuyen syslog tu xa
+--- [12] Dung luong / thoi gian / cap nhat
+/dev/root        20G  2.7G   17G  15% /
+                Time zone: Etc/UTC (UTC, +0000)
+System clock synchronized: yes

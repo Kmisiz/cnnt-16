@@ -1,0 +1,58 @@
+=== Sun Nov  8 18:59:51 UTC 2026 ===
+do dai token: user1=159 user2=159 teller=157 admin=155
+tong so du truoc: 70000000
+--- XAC THUC
+PASS khong token -> /api/me                               expect=401 got=401  {"detail":"Phiên đăng nhập không tồn tại."}
+PASS token rac                                            expect=401 got=401  {"detail":"Phiên đăng nhập không hợp lệ."}
+PASS token ky sai secret (gia admin)                      expect=401 got=401  {"detail":"Phiên đăng nhập không hợp lệ."}
+PASS token alg=none (gia admin)                           expect=401 got=401  {"detail":"Phiên đăng nhập không hợp lệ."}
+PASS sua payload user1 thanh admin                        expect=401 got=401  {"detail":"Phiên đăng nhập không hợp lệ."}
+PASS login sai mat khau                                   expect=401 got=401  {"detail":"Tên đăng nhập hoặc mật khẩu không đúng."}
+PASS login user khong ton tai                             expect=401 got=401  {"detail":"Tên đăng nhập hoặc mật khẩu không đúng."}
+PASS SQLi: admin' OR '1'='1                               expect=401 got=401  {"detail":"Tên đăng nhập hoặc mật khẩu không đúng."}
+PASS SQLi: admin'--                                       expect=401 got=401  {"detail":"Tên đăng nhập hoặc mật khẩu không đúng."}
+PASS login thieu truong password                          expect=422 got=422  {"detail":[{"type":"missing","loc":["body","password"],"msg":"Field required","i
+PASS username 80 ky tu                                    expect=422 got=422  {"detail":[{"type":"string_too_long","loc":["body","username"],"msg":"String sho
+--- PHAN QUYEN (RBAC)
+PASS customer -> /api/my-account                          expect=200 got=200  {"account_no":"1900888801","balance":48996000.0,"currency":"VND","updated_at":"2
+PASS customer -> /api/accounts (nhan vien)                expect=403 got=403  {"detail":"Bạn không có quyền thực hiện chức năng này."}
+PASS customer -> /api/admin/users                         expect=403 got=403  {"detail":"Bạn không có quyền thực hiện chức năng này."}
+PASS customer -> /api/admin/audit-logs                    expect=403 got=403  {"detail":"Bạn không có quyền thực hiện chức năng này."}
+PASS customer tu khoa user2                               expect=403 got=403  {"detail":"Bạn không có quyền thực hiện chức năng này."}
+PASS teller -> /api/accounts                              expect=200 got=200  {"items":[{"account_no":"1900888801","username":"user1","full_name":"Nguyễn V�
+PASS teller -> /api/admin/users                           expect=403 got=403  {"detail":"Bạn không có quyền thực hiện chức năng này."}
+PASS teller -> /api/transfer                              expect=403 got=403  {"detail":"Bạn không có quyền thực hiện chức năng này."}
+PASS teller -> /api/my-account                            expect=403 got=403  {"detail":"Bạn không có quyền thực hiện chức năng này."}
+PASS admin -> /api/admin/users                            expect=200 got=200  {"items":[{"id":1,"username":"user1","full_name":"Nguyễn Văn An","role":"cust
+PASS admin -> /api/admin/audit-logs                       expect=200 got=200  {"items":[{"id":127,"event_time":"2026-11-08T18:59:53.606274+00:00","username":"
+PASS admin -> /api/transfer                               expect=403 got=403  {"detail":"Bạn không có quyền thực hiện chức năng này."}
+PASS staff-check customer                                 expect=403 got=403  {"detail":"Forbidden"}
+PASS staff-check khong dang nhap                          expect=401 got=401  {"detail":"Phiên đăng nhập không tồn tại."}
+PASS staff-check teller                                   expect=204 got=204  
+PASS staff-check admin                                    expect=204 got=204  
+--- NGHIEP VU CHUYEN KHOAN
+PASS chuyen vuot so du                                    expect=400 got=400  {"detail":"Số dư không đủ để thực hiện giao dịch."}
+PASS so tien am                                           expect=422 got=422  {"detail":[{"type":"greater_than","loc":["body","amount"],"msg":"Input should be
+PASS so tien 0                                            expect=422 got=422  {"detail":[{"type":"greater_than","loc":["body","amount"],"msg":"Input should be
+PASS so tien > han muc 500tr                              expect=422 got=422  {"detail":[{"type":"less_than_equal","loc":["body","amount"],"msg":"Input should
+PASS chuyen cho chinh minh                                expect=400 got=400  {"detail":"Không thể chuyển tiền đến chính tài khoản nguồn."}
+PASS tai khoan nhan khong ton tai                         expect=404 got=404  {"detail":"Không tìm thấy tài khoản nhận."}
+PASS so tai khoan chua chu (SQLi)                         expect=422 got=422  {"detail":[{"type":"string_pattern_mismatch","loc":["body","to_account"],"msg":"
+PASS lookup SQLi                                          expect=400 got=400  {"detail":"Số tài khoản không hợp lệ."}
+PASS lookup tai khoan hop le                              expect=200 got=200  {"account_no":"1900888802","holder":"TRẦN THỊ BÌNH"}
+PASS sao ke cua minh                                      expect=200 got=200  {"items":[{"id":50,"created_at":"2026-11-08T18:59:48.479906+00:00","amount":5000
+--- KHOA / MO KHOA TAI KHOAN
+PASS admin tu khoa chinh minh                             expect=400 got=400  {"detail":"Không thể tự khóa tài khoản đang đăng nhập."}
+PASS admin khoa user2                                     expect=200 got=200  {"username":"user2","is_active":false}
+PASS user2 dung token cu sau khi bi khoa                  expect=401 got=401  {"detail":"Tài khoản đã bị khóa hoặc không tồn tại."}
+PASS user2 dang nhap khi bi khoa                          expect=403 got=403  {"detail":"Tài khoản đã bị tạm khóa. Vui lòng liên hệ ngân hàng.
+PASS admin mo khoa user2                                  expect=200 got=200  {"username":"user2","is_active":true}
+PASS user2 dang nhap lai                                  expect=200 got=200  {"username":"user2","full_name":"Trần Thị Bình","role":"customer","session_
+--- TAO NGUOI DUNG
+PASS tao user trung ten                                   expect=409 got=409  {"detail":"Tên đăng nhập đã tồn tại."}
+PASS mat khau ngan < 8                                    expect=422 got=422  {"detail":[{"type":"string_too_short","loc":["body","password"],"msg":"String sh
+PASS role khong hop le                                    expect=422 got=422  {"detail":[{"type":"string_pattern_mismatch","loc":["body","role"],"msg":"String
+PASS tao customer tmp_test (se xoa sau)                   expect=201 got=201  {"username":"tmp_test","role":"customer","account_no":"1900888807"}
+--- DONG THOI: 20 chuyen khoan song song 2 chieu (user1<->user2, 1000 VND moi lan)
+tong so du sau: 70000000
+PASS logout                                               expect=200 got=200  {"status":"ok"}

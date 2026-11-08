@@ -340,14 +340,22 @@ def lookup_account(account_no: str, user: dict = Depends(require_roles(["custome
 def transfer(data: TransferIn, request: Request, user: dict = Depends(require_roles(["customer"]))):
     ip = client_ip(request)
     with db() as conn, conn.cursor() as cur:
-        src = _own_account(cur, user["id"], lock=True)
+        src = _own_account(cur, user["id"])
         if not src:
             raise HTTPException(404, "Không tìm thấy tài khoản nguồn.")
         if src["account_no"] == data.to_account:
             raise HTTPException(400, "Không thể chuyển tiền đến chính tài khoản nguồn.")
-        cur.execute("SELECT account_no FROM accounts WHERE account_no = %s FOR UPDATE", (data.to_account,))
-        if not cur.fetchone():
+        # Khoa CA HAI tai khoan trong cung 1 cau lenh, theo thu tu so tai khoan tang dan.
+        # Neu khoa lan luot "nguon roi dich", hai giao dich chuyen cheo A->B va B->A
+        # se khoa nguoc thu tu nhau va gay deadlock.
+        cur.execute(
+            "SELECT account_no, balance FROM accounts WHERE account_no IN (%s, %s) ORDER BY account_no FOR UPDATE",
+            (src["account_no"], data.to_account),
+        )
+        locked = {row["account_no"]: row for row in cur.fetchall()}
+        if data.to_account not in locked:
             raise HTTPException(404, "Không tìm thấy tài khoản nhận.")
+        src["balance"] = locked[src["account_no"]]["balance"]  # so du moi nhat sau khi da khoa
         if src["balance"] < data.amount:
             audit(user["username"], "TRANSFER", "FAILED", ip, "so du khong du")
             raise HTTPException(400, "Số dư không đủ để thực hiện giao dịch.")

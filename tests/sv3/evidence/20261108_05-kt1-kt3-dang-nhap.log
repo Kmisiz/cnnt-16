@@ -1,0 +1,37 @@
+=== Sun Nov  8 18:59:47 UTC 2026 KT1: khach hop le dung duoc chuc nang duoc cap ===
+18:59:48 dang nhap user1, user2 -> token 159/159 ky tu
+18:59:48 GET /api/my-account (user1):
+{"account_no":"1900888801","balance":48996000.0,"currency":"VND","updated_at":"2026-11-08T18:47:52.362099+00:00"}
+18:59:48 GET /api/accounts/lookup?account_no=1900888802:
+{"account_no":"1900888802","holder":"TRẦN THỊ BÌNH"}
+18:59:48 POST /api/transfer user1 -> 1900888802, 500000 VND:
+{"transaction_id":49,"created_at":"2026-11-08T18:59:48.405345+00:00","balance":48496000.0}
+18:59:48 POST /api/transfer user2 -> 1900888801, 500000 VND (chuyen lai):
+{"transaction_id":50,"created_at":"2026-11-08T18:59:48.479906+00:00","balance":21004000.0}
+18:59:48 GET /api/my-transactions?limit=2:
+{"items":[{"id":50,"created_at":"2026-11-08T18:59:48.479906+00:00","amount":500000.0,"note":"KT1 ve","direction":"IN","counterpart":"1900888802","counterpart_name":"Trần Thị Bình"},{"id":49,"created_at":"2026-11-08T18:59:48.405345+00:00","amount":500000.0,"note":"KT1 di","direction":"OUT","counterpart":"1900888802","counterpart_name":"Trần Thị Bình"}]}
+18:59:48 GET /api/my-account sau chuyen:
+{"account_no":"1900888801","balance":48996000.0,"currency":"VND","updated_at":"2026-11-08T18:59:48.479906+00:00"}
+
+=== Sun Nov  8 18:59:48 UTC 2026 KT3: dang nhap sai co bang chung log ===
+18:59:48  login admin sai mat khau lan 1 -> HTTP 401
+18:59:48  login admin sai mat khau lan 2 -> HTTP 401
+18:59:49  login admin sai mat khau lan 3 -> HTTP 401
+18:59:49  login user khong ton tai (hacker) -> HTTP 401
+18:59:49 RBAC: user1 (customer) goi /api/admin/users:
+{"detail":"Bạn không có quyền thực hiện chức năng này."} -> HTTP 403
+18:59:49 Doc bang audit_logs trong CSDL (vps3) - 10 dong moi nhat:
+ gio_utc  | username |    action    | status  |  client_ip  |                chi_tiet                
+----------+----------+--------------+---------+-------------+----------------------------------------
+ 18:59:49 | user1    | RBAC         | DENIED  | 10.10.10.20 | role=customer path=/api/admin/users
+ 18:59:49 | hacker   | LOGIN        | FAILED  | 10.10.10.20 | sai ten dang nhap hoac mat khau
+ 18:59:49 | admin    | LOGIN        | FAILED  | 10.10.10.20 | sai ten dang nhap hoac mat khau
+ 18:59:49 | admin    | LOGIN        | FAILED  | 10.10.10.20 | sai ten dang nhap hoac mat khau
+ 18:59:48 | admin    | LOGIN        | FAILED  | 10.10.10.20 | sai ten dang nhap hoac mat khau
+ 18:59:48 | user1    | VIEW_ACCOUNT | SUCCESS | 10.10.10.20 | 1900888801
+ 18:59:48 | user2    | TRANSFER     | SUCCESS | 10.10.10.20 | 1900888802 -> 1900888801 amount=500000
+ 18:59:48 | user1    | TRANSFER     | SUCCESS | 10.10.10.20 | 1900888801 -> 1900888802 amount=500000
+ 18:59:48 | user1    | VIEW_ACCOUNT | SUCCESS | 10.10.10.20 | 1900888801
+ 18:59:48 | user2    | LOGIN        | SUCCESS | 10.10.10.20 | role=customer
+(10 rows)
+

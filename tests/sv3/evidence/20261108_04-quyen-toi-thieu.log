@@ -1,0 +1,17 @@
+=== Sun Nov  8 18:59:44 UTC 2026 KIEM THU DAC QUYEN TOI THIEU (bank_app tu vps2 -> vps3) ===
+audit_logs truoc: 95 dong; transactions: 48 dong
+18:59:45  DELETE FROM transactions                         -> ERROR:  permission denied for table transactions
+18:59:45  DROP TABLE users                                 -> ERROR:  must be owner of table users
+18:59:45  DELETE FROM audit_logs                           -> ERROR:  permission denied for table audit_logs
+18:59:45  UPDATE audit_logs SET status='SUCCESS'           -> ERROR:  permission denied for table audit_logs
+18:59:45  TRUNCATE audit_logs                              -> ERROR:  permission denied for table audit_logs
+18:59:45  DROP TABLE audit_logs                            -> ERROR:  must be owner of table audit_logs
+18:59:45  ALTER TABLE audit_logs DISABLE TRIGGER ALL       -> ERROR:  must be owner of table audit_logs
+18:59:45  CREATE TABLE hack(x int)                         -> ERROR:  permission denied for schema public
+18:59:45  GRANT ALL ON audit_logs TO bank_app              -> WARNING:  no privileges were granted for "audit_logs"
+18:59:45  TRUNCATE accounts CASCADE                        -> ERROR:  permission denied for table accounts
+18:59:45  ALTER ROLE bank_app SUPERUSER                    -> ERROR:  must be superuser to alter superuser roles or change superuser attribute
+18:59:45  CREATE ROLE evil SUPERUSER                       -> ERROR:  must be superuser to create superusers
+audit_logs sau: 95 dong; transactions: 48 dong
+--- Thao tac hop le van duoc phep (bank_app chi doc/them):
+18:59:45  SELECT count(*) FROM audit_logs -> 95

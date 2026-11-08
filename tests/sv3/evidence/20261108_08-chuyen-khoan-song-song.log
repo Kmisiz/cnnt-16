@@ -1,0 +1,8 @@
+=== Sun Nov  8 18:59:59 UTC 2026 test dong thoi ===
+so deadlock trong log truoc test: 14
+truoc: 1900888801=48996000 1900888802=21004000 | giao dich: 70
+ma tra ve:
+     40 200
+sau:   1900888801=48996000 1900888802=21004000 | giao dich: 110
+tong so du (phai la 70000000): 70000000
+so deadlock trong log sau test: 14

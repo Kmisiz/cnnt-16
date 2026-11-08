@@ -1,0 +1,47 @@
+=== Sun Nov  8 19:00:57 UTC 2026 [1] Sao luu ma hoa AES-256-CBC (pbkdf2)
+[OK] Da tao ban sao luu ma hoa: /var/backups/postgres/digital_bank_20261108_190057.sql.gz.enc
+-rw------- 1 root root 6272 Nov  8 19:00 /var/backups/postgres/digital_bank_20261108_190057.sql.gz.enc
+8 byte dau file (ma hoa, khong doc duoc noi dung): Salted__
+--- khoa sai thi khong giai ma duoc:
+
+gzip: stdin: not in gzip format
+
+=== Sun Nov  8 19:00:57 UTC 2026 [2] Trang thai TRUOC su co
+ users | accounts | transactions | audit_logs | tong_so_du 
+-------+----------+--------------+------------+------------
+     4 |        2 |          110 |        198 |   70000000
+(1 row)
+
+checksum truoc = 681ad00b363855f0afa916898afd6347
+=== Sun Nov  8 19:00:58 UTC 2026 [3] MO PHONG SU CO: TRUNCATE transactions, accounts CASCADE
+TRUNCATE TABLE
+ users | accounts | transactions | audit_logs | tong_so_du 
+-------+----------+--------------+------------+------------
+     4 |        0 |            0 |        198 |           
+(1 row)
+
+=== Sun Nov  8 19:00:58 UTC 2026 [4] PHUC HOI: giai ma AES-256 -> gunzip -> psql
+(khong co loi)
+=== Sun Nov  8 19:00:58 UTC 2026 [5] Trang thai SAU phuc hoi
+ users | accounts | transactions | audit_logs | tong_so_du 
+-------+----------+--------------+------------+------------
+     4 |        2 |          110 |        198 |   70000000
+(1 row)
+
+checksum sau   = 681ad00b363855f0afa916898afd6347
+KET QUA: KHOP - du lieu phuc hoi 100%
+ account_no |   balance   
+------------+-------------
+ 1900888801 | 48996000.00
+ 1900888802 | 21004000.00
+(2 rows)
+
+=== Sun Nov  8 19:00:58 UTC 2026 [6] Kiem tra quyen sau phuc hoi
+  table_name  |    quyen_bank_app    
+--------------+----------------------
+ accounts     | INSERT,SELECT,UPDATE
+ audit_logs   | INSERT,SELECT
+ transactions | INSERT,SELECT,UPDATE
+ users        | INSERT,SELECT,UPDATE
+(4 rows)
+

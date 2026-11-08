@@ -1,0 +1,72 @@
+=== Sun Nov  8 18:59:21 UTC 2026 vps2 ===
+--- [1] Dich vu
+active
+enabled
+USER         PID CMD
+bankapp   115546 /opt/bank-app/venv/bin/python3 -c from multiprocessing.resource_tracker import main;main(4)
+bankapp   115547 /opt/bank-app/venv/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=5, pipe_handle=7) --multiprocessing-fork
+bankapp   115548 /opt/bank-app/venv/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=5, pipe_handle=9) --multiprocessing-fork
+--- [2] Cong lang nghe (phai la 10.10.10.20:8080, khong phai 0.0.0.0)
+LISTEN 0.0.0.0:22
+LISTEN 10.10.10.20:8080
+LISTEN [::]:22
+--- [3] Quyen file nhay cam
+600 bankapp:bankapp /opt/bank-app/.env
+755 bankapp:bankapp /opt/bank-app
+644 bankapp:bankapp /var/log/bank-app.log
+--- [4] .env: khong in gia tri bi mat
+# Copy thanh /opt/bank-app/.env tren vps2, sau do: sudo chmod 600 /opt/bank-app/.env
+DB_HOST=10.10.10.30
+DB_PORT=5432
+DB_NAME=digital_bank
+DB_USER=bank_app
+DB_PASSWORD=***an***
+
+# Tao chuoi ngau nhien: openssl rand -hex 32
+JWT_SECRET=***an***
+SESSION_MINUTES=30
+JWT_SECRET con la gia tri mau? Khong (tot), do dai: 64
+--- [5] Loi trong log ung dung
+so dong loi: 182
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/opt/bank-app/venv/lib/python3.10/site-packages/starlette/middleware/errors.py", line 186, in __call__
+  File "/opt/bank-app/venv/lib/python3.10/site-packages/starlette/middleware/errors.py", line 164, in __call__
+psycopg2.errors.DeadlockDetected: deadlock detected
+--- [6] UFW
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), disabled (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW IN    10.10.10.40               
+8080/tcp                   ALLOW IN    10.10.10.10               
+
+--- [7] Tu vps2: sang vps3
+vps3:5432 (phai MO)   : MO
+vps3:22   (phai CHAN) : bi chan (tot)
+vps1:8080 (WAF, SV2)  : chan/chua cai WAF
+vps0:443  (web)       : MO
+--- [8] DB: dang nhap sai / sai user
+bank_app sai mat khau: psql: error: connection to server at "10.10.10.30", port 5432 failed: FATAL:  password authentication failed for user "bank_app"
+user postgres tu vps2: psql: error: connection to server at "10.10.10.30", port 5432 failed: FATAL:  no pg_hba.conf entry for host "10.10.10.20", user "postgres", database "digital_bank", SSL encryption
+bank_app vao DB khac : psql: error: connection to server at "10.10.10.30", port 5432 failed: FATAL:  no pg_hba.conf entry for host "10.10.10.20", user "bank_app", database "postgres", SSL encryption
+TLS toi DB?          : t
+--- [9] Header & lo thong tin cua API
+HTTP/1.1 405 Method Not Allowed
+date: Sun, 08 Nov 2026 18:59:29 GMT
+server: uvicorn
+allow: GET
+content-length: 31
+content-type: application/json
+
+/docs (Swagger) mo?  : 404
+/openapi.json mo?    : 404
+--- [10] Syslog chuyen sang vps4?
+KHONG co cau hinh chuyen syslog tu xa
+--- [11] Tai nguyen
+               total        used        free      shared  buff/cache   available
+Mem:            1964         425         923           1         615        1372
+/dev/root        20G  4.2G   16G  22% /

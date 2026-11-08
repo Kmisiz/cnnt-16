@@ -4,6 +4,28 @@
 
 ---
 
+## 0. CÀI ĐẶT NHANH BẰNG SCRIPT (khuyên dùng, đã chạy thực tế ngày 2026-11-08)
+
+Các mục 2–4 bên dưới là bản chi tiết từng bước. Cùng nội dung đó đã được gom thành 2 script trong `scripts/`, đã sửa các lỗi của bản thủ công. Chạy **vps3 trước, vps2 sau**:
+
+```bash
+# vps3-data-db (10.10.10.30)
+git clone https://github.com/Kmisiz/cnnt-16.git && sudo REPO=$PWD/cnnt-16 bash cnnt-16/scripts/setup-vps3.sh
+# vps2-app-api (10.10.10.20)
+git clone https://github.com/Kmisiz/cnnt-16.git && sudo REPO=$PWD/cnnt-16 bash cnnt-16/scripts/setup-vps2.sh
+```
+
+Các điểm khác bản thủ công bên dưới:
+- Ubuntu 22.04 cài **PostgreSQL 14** (không phải 16), script tự dò phiên bản trong `/etc/postgresql`.
+- `init_db.sql` không tự tạo database, script chạy `createdb digital_bank` trước, rồi nạp file bằng `-d digital_bank`.
+- Đã bỏ role `bank_backup` (SUPERUSER, không được dùng ở đâu).
+- `pg_dump --clean --if-exists` để phục hồi không báo lỗi "already exists".
+- Passphrase sao lưu sinh ngẫu nhiên (`openssl rand`) và lưu ở `/root/.backup_passphrase`, không dùng giá trị cố định trong tài liệu.
+- `JWT_SECRET` sinh ngẫu nhiên; tạo sẵn `/var/log/bank-app.log` (service dùng `ProtectSystem=strict`).
+- Lệnh `curl` qua HTTP không giữ được cookie `Secure`; khi test trực tiếp API hãy lấy token từ header `Set-Cookie` rồi gửi bằng `Authorization: Bearer`.
+
+---
+
 ## 1. TỔNG QUAN VAI TRÒ CỦA SV3 TRONG HỆ THỐNG
 
 SV3 chịu trách nhiệm xây dựng và bảo vệ 2 phân vùng cốt lõi nhất của Ngân hàng Số Mười Sáu:
@@ -198,7 +220,7 @@ Trên `vps3-data-db` (`10.10.10.30`), chạy kịch bản mô phỏng sự cố 
 ```bash
 # 1. Tao ban sao luu moi nhat
 sudo /usr/local/bin/backup_bank_db.sh
-LATEST_BACKUP=$(ls -t /var/backups/postgres/digital_bank_*.sql.gz.enc | head -n 1)
+LATEST_BACKUP=$(sudo bash -c 'ls -t /var/backups/postgres/digital_bank_*.sql.gz.enc | head -n 1')   # thu muc 700 cua postgres, phai dung sudo
 
 # 2. Kiem tra so luong ban ghi truoc su co
 sudo -u postgres psql -d digital_bank -c "SELECT account_number, owner_name, balance FROM accounts;"

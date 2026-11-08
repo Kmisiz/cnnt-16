@@ -1,8 +1,8 @@
 -- =====================================================================
 -- Muoi Sau Bank - Khoi tao CSDL (chay tren vps3-data-db 10.10.10.30)
 --
---   sudo -u postgres psql -c "CREATE DATABASE digital_bank;"
---   sudo -u postgres psql -d digital_bank -f init_db.sql
+--   sudo -u postgres createdb digital_bank   (phai tao truoc, file nay khong tu tao)
+--   sudo -u postgres psql -d digital_bank < init_db.sql
 --
 -- Tai khoan nguoi dung mau KHONG nap o day: backend tu tao (mat khau bam
 -- bcrypt) o lan khoi dong dau tien khi bang users con trong.
@@ -52,16 +52,12 @@ CREATE INDEX IF NOT EXISTS idx_audit_time ON audit_logs (event_time DESC);
 -- ---------------------------------------------------------------------
 -- Tai khoan CSDL
 --   bank_app    : dung boi backend (vps2) - quyen toi thieu
---   bank_backup : dung boi vps4 de sao luu / phuc hoi
 -- Doi mat khau truoc khi trien khai that.
 -- ---------------------------------------------------------------------
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'bank_app') THEN
         CREATE ROLE bank_app LOGIN PASSWORD 'AppSecretPass_2026!';
-    END IF;
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'bank_backup') THEN
-        CREATE ROLE bank_backup LOGIN SUPERUSER PASSWORD 'BackupSecretPass_2026!';
     END IF;
 END
 $$;
