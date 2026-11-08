@@ -8,30 +8,26 @@
 
 Hệ thống được triển khai trên Google Cloud Platform (GCP) trong mạng VPC `bank-vpc` (`10.10.10.0/24` - vùng `asia-southeast1-b`):
 
-| Máy chủ | IP Nội bộ | External IP | Vai trò trong kiến trúc |
+| Máy chủ | IP Nội bộ | External IP (Public) | Vai trò trong kiến trúc |
 | :--- | :--- | :--- | :--- |
-| **`vps0-web-public`** | `10.10.10.5` | **Có** | **Public Web Tier:** Chạy Nginx HTTPS (TLS 1.3), phục vụ giao diện Web tĩnh Mười Sáu Bank (`/var/www/muoisau`). Hoàn toàn không biết sự tồn tại của App (`vps2`) hay DB (`vps3`), chỉ đẩy `/api/*` về `10.10.10.10:8080`. |
-| **`vps1-dmz-fw`** | `10.10.10.10` | Không | **DMZ Firewall & WAF Tier:** Tường lửa trung gian + Nginx Layer 7 WAF & Rate Limiting (`5r/m` chống Brute-force `/api/login`), kiểm soát luồng dữ liệu từ `vps0` vào `vps2`. |
-| **`vps2-app-api`** | `10.10.10.20` | Không | **Application Tier (SV3):** Chạy Core Banking API (FastAPI cổng `8080`). Chỉ nhận kết nối từ `vps1` (`10.10.10.10`). |
-| **`vps3-data-db`** | `10.10.10.30` | Không | **Data Tier (SV3):** Chạy PostgreSQL 16 (cổng `5432`). Chỉ nhận kết nối từ `vps2` (`10.10.10.20`). |
-| **`vps4-mgmt-log`** | `10.10.10.40` | **Có** | **Management & SIEM Tier (SV1 & SV4):** Bastion Host duy nhất được phép SSH (`22/tcp`) vào các máy nội bộ và thu thập Syslog tập trung (`514/udp`). |
-
-> **Đặc tả bảo mật nổi bật trên Web Server (`vps0`):**
-> - Giao diện khách hàng tại `/` là cổng Internet Banking chuẩn của **Ngân hàng Số Mười Sáu (Mười Sáu Bank)** (không có nút Admin, không lộ bất kỳ thông tin quản trị nào).
-> - Khi `admin` hoặc `teller` đăng nhập tại `/`, hệ thống cấp `HttpOnly` cookie (`kn_session`) và tự động chuyển hướng sang `/admin/`.
-> - Nếu khách hàng (`user1`, `user2`) hoặc người lạ chưa đăng nhập cố tình gõ đường dẫn `/admin` hoặc `/admin/` trên trình duyệt, Nginx trên `vps0` sử dụng mô-đun `auth_request` kiểm tra ngầm với Backend và **trả về đúng trang `404 Not Found` mặc định của Nginx** (ẩn hoàn toàn sự tồn tại của trang quản trị).
+| **`vps0-web-public`** | `10.10.10.5` | **`34.124.217.241`** | **Public Web Tier:** Chạy Nginx HTTPS (TLS 1.3), phục vụ giao diện Web tĩnh Mười Sáu Bank (`/var/www/muoisau`). Người dùng Internet truy cập tại: **`https://34.124.217.241`**. |
+| **`vps1-dmz-fw`** | `10.10.10.10` | `34.87.91.248` (DMZ) | **DMZ Firewall & WAF Tier:** Tường lửa trung gian + Nginx Layer 7 WAF & Rate Limiting (`5r/m` chống Brute-force `/api/login`), kiểm soát luồng dữ liệu từ `vps0` vào `vps2`. |
+| **`vps2-app-api`** | `10.10.10.20` | Không (None) | **Application Tier (SV3):** Chạy Core Banking API (FastAPI cổng `8080`). Chỉ nhận kết nối từ `vps1` (`10.10.10.10`). |
+| **`vps3-data-db`** | `10.10.10.30` | Không (None) | **Data Tier (SV3):** Chạy PostgreSQL 16 (cổng `5432`). Chỉ nhận kết nối từ `vps2` (`10.10.10.20`). |
+| **`vps4-mgmt-log`** | `10.10.10.40` | **`136.85.99.236`** | **Management & SIEM Tier (SV1 & SV4):** Bastion Host duy nhất được phép SSH (`22/tcp`) vào các máy nội bộ và thu thập Syslog tập trung (`514/udp`). |
 
 ---
 
 ### 1.1. Lệnh PowerShell dành cho Hiếu (kết nối từ máy tính ở nhà)
 Hiếu mở **PowerShell** trên máy tính cá nhân ở nhà và copy paste các lệnh sau:
-- **Truy cập vào máy DMZ WAF (`vps1-dmz-fw` `10.10.10.10`):**
+- **Truy cập thẳng vào máy Web Public (`vps0-web-public`):**
+  ```powershell
+  ssh hieu@34.124.217.241
+  ```
+  *(Hoặc nhảy qua Bastion Host: `ssh -J hieu@136.85.99.236 hieu@10.10.10.5`)*
+- **Truy cập vào máy DMZ WAF (`vps1-dmz-fw`):**
   ```powershell
   ssh -J hieu@136.85.99.236 hieu@10.10.10.10
-  ```
-- **Truy cập vào máy Web Public (`vps0-web-public` `10.10.10.5`):**
-  ```powershell
-  ssh -J hieu@136.85.99.236 hieu@10.10.10.5
   ```
 
 ---
@@ -195,18 +191,19 @@ Sau khi triển khai xong, Hiếu (SV2) thực hiện các lệnh kiểm chứng
      -> **Kết quả mong đợi:** Cả 2 lệnh đều bị `Connection timed out` (do UFW chặn hoàn toàn kết nối tắt từ `vps0` sang `vps2` và `vps3`).
 
 2. **Chứng minh ẩn trang `/admin` bằng lỗi `404 Not Found`:**
-   - Mở trình duyệt ẩn danh (chưa đăng nhập) hoặc đăng nhập tài khoản khách hàng `user1` (`User1@123`), sau đó gõ địa chỉ `https://<EXTERNAL_IP_VPS0>/admin`.
+   - Mở trình duyệt ẩn danh (chưa đăng nhập) hoặc đăng nhập tài khoản khách hàng `user1` (`User1@123`), sau đó gõ địa chỉ:  
+     👉 **`https://34.124.217.241/admin`**
    - **Kết quả mong đợi:** Trình duyệt hiển thị trang trắng **`404 Not Found - nginx`** giống hệt như khi gõ một đường dẫn không tồn tại (`/trang-khong-ton-tai`).
 
 3. **Chứng minh WAF chặn SQL Injection & Rate Limiting chặn Brute-force (KT2.1):**
    ```bash
-   # Test WAF chan SQLi tren URL:
-   curl -k -i "https://127.0.0.1/api/accounts?id=1%20UNION%20SELECT%20*--+"
+   # Test WAF chan SQLi truc tiep qua IP Public cua vps0:
+   curl -k -i "https://34.124.217.241/api/accounts?id=1%20UNION%20SELECT%20*--+"
 
    # Test Rate Limiting chan Brute-force (>5 lan/phut) tren /api/login:
    for i in {1..8}; do
      curl -k -s -o /dev/null -w "Lan $i: HTTP %{http_code}\n" \
-       -X POST https://127.0.0.1/api/login \
+       -X POST https://34.124.217.241/api/login \
        -H "Content-Type: application/json" \
        -d '{"username":"admin","password":"sai_mat_khau"}'
    done

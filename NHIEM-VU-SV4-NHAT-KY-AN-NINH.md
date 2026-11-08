@@ -54,7 +54,7 @@ Khi đến lượt Đức trình bày trước giảng viên, Đức đứng tr�
 ---
 
 ### Bước 2: Thao tác trực tiếp trên giao diện Web Admin
-Đức mở trình duyệt tại địa chỉ `https://<IP_PUBLIC_VPS0>/admin/` (đăng nhập tài khoản `admin` / `Admin@123`), bấm vào mục **"Nhật ký an ninh"**:
+Đức mở trình duyệt tại địa chỉ: 👉 **`https://34.124.217.241/admin/`** (đăng nhập tài khoản `admin` / `Admin@123`), bấm vào mục **"Nhật ký an ninh"**:
 
 1. **Demo bộ lọc an ninh thông minh:**
    * Tại ô **"Kết quả:"**, Đức bấm chọn **`Bị từ chối (DENIED)`**:
