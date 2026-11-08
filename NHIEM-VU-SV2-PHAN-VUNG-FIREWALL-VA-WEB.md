@@ -23,6 +23,19 @@ Hệ thống được triển khai trên Google Cloud Platform (GCP) trong mạn
 
 ---
 
+### 1.1. Lệnh PowerShell dành cho Hiếu (kết nối từ máy tính ở nhà)
+Hiếu mở **PowerShell** trên máy tính cá nhân ở nhà và copy paste các lệnh sau:
+- **Truy cập vào máy DMZ WAF (`vps1-dmz-fw` `10.10.10.10`):**
+  ```powershell
+  ssh -J hieu@136.85.99.236 hieu@10.10.10.10
+  ```
+- **Truy cập vào máy Web Public (`vps0-web-public` `10.10.10.5`):**
+  ```powershell
+  ssh -J hieu@136.85.99.236 hieu@10.10.10.5
+  ```
+
+---
+
 ## 2. THIẾT LẬP FIREWALL (UFW) TRÊN CÁC PHÂN VÙNG
 
 > **Lưu ý sống còn trước khi bật UFW:** Trên mọi máy chủ, phải mở quyền SSH từ `vps4-mgmt-log` (`10.10.10.40`) trước khi gõ `ufw enable` để không bị khóa kết nối điều khiển.

@@ -27,6 +27,19 @@ SV3 chịu trách nhiệm xây dựng và bảo vệ 2 phân vùng cốt lõi nh
 
 ---
 
+### 1.1. Lệnh PowerShell dành cho Thắng (kết nối từ máy tính ở nhà)
+Thắng mở **PowerShell** trên máy tính cá nhân ở nhà và copy paste các lệnh sau:
+- **Truy cập vào máy Core Banking API (`vps2-app-api` `10.10.10.20`):**
+  ```powershell
+  ssh -J thang@136.85.99.236 thang@10.10.10.20
+  ```
+- **Truy cập vào máy Database PostgreSQL (`vps3-data-db` `10.10.10.30`):**
+  ```powershell
+  ssh -J thang@136.85.99.236 thang@10.10.10.30
+  ```
+
+---
+
 ## 2. TRIỂN KHAI CƠ SỞ DỮ LIỆU TRÊN `vps3-data-db` (`10.10.10.30`)
 
 Từ `vps4-mgmt-log`, SSH vào **`vps3-data-db` (`10.10.10.30`)** và thực hiện tuần tự:
