@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Hệ thống quản trị nội bộ - Mười Sáu Bank</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <span class="logo">
+      <span class="logo-mark">16</span>
+      <span class="logo-text">Mười Sáu Bank<small>Hệ thống quản trị nội bộ</small></span>
+    </span>
+    <div class="header-right">
+      <span><strong id="staff-name"></strong> &middot; <span id="staff-role"></span></span>
+      <button class="link-btn" id="btn-logout" type="button">Đăng xuất</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap app-layout">
+    <nav class="side-nav" id="admin-nav">
+      <a href="#accounts" data-tab="accounts">Tài khoản khách hàng</a>
+      <a href="#users" data-tab="users" data-admin>Người dùng</a>
+      <a href="#create" data-tab="create" data-admin>Cấp tài khoản mới</a>
+      <a href="#logs" data-tab="logs" data-admin>Nhật ký an ninh</a>
+    </nav>
+
+    <div class="content">
+
+      <section class="tab hidden" id="tab-accounts">
+        <h2 class="page-title">Tài khoản khách hàng</h2>
+        <div class="panel">
+          <table class="table">
+            <thead>
+              <tr><th>Số tài khoản</th><th>Chủ tài khoản</th><th>Tên đăng nhập</th><th>Trạng thái</th><th>Cập nhật</th><th class="num">Số dư</th></tr>
+            </thead>
+            <tbody id="accounts-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="tab hidden" id="tab-users">
+        <h2 class="page-title">Người dùng hệ thống</h2>
+        <div class="panel">
+          <p class="form-error hidden" id="users-error"></p>
+          <table class="table">
+            <thead>
+              <tr><th>ID</th><th>Tên đăng nhập</th><th>Họ tên</th><th>Vai trò</th><th>Số TK</th><th>Người tạo</th><th>Trạng thái</th><th></th></tr>
+            </thead>
+            <tbody id="users-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="tab hidden" id="tab-create">
+        <h2 class="page-title">Cấp tài khoản mới</h2>
+        <div class="panel">
+          <form id="create-form" class="narrow-form" autocomplete="off" novalidate>
+            <label for="c-username">Tên đăng nhập</label>
+            <input id="c-username" type="text" maxlength="50">
+            <div class="field-hint">Chữ thường, số, dấu chấm hoặc gạch dưới, tối thiểu 4 ký tự.</div>
+
+            <label for="c-fullname">Họ và tên</label>
+            <input id="c-fullname" type="text" maxlength="100">
+
+            <label for="c-password">Mật khẩu ban đầu</label>
+            <input id="c-password" type="text" maxlength="128">
+            <div class="field-hint">Tối thiểu 8 ký tự.</div>
+
+            <label for="c-role">Vai trò</label>
+            <select id="c-role">
+              <option value="customer">Khách hàng</option>
+              <option value="teller">Giao dịch viên</option>
+              <option value="admin">Quản trị viên</option>
+            </select>
+
+            <div id="c-balance-wrap">
+              <label for="c-balance">Số dư ban đầu (VND)</label>
+              <input id="c-balance" type="text" inputmode="numeric" value="0">
+            </div>
+
+            <p class="form-error hidden" id="create-error"></p>
+            <p class="form-ok hidden" id="create-ok"></p>
+            <div class="btn-row"><button class="btn btn-primary" type="submit">Tạo tài khoản</button></div>
+          </form>
+        </div>
+      </section>
+
+      <section class="tab hidden" id="tab-logs">
+        <h2 class="page-title">Nhật ký an ninh</h2>
+        <div class="panel">
+          <div class="toolbar">
+            <label for="log-filter">Kết quả:</label>
+            <select id="log-filter">
+              <option value="">Tất cả</option>
+              <option value="FAILED">Thất bại (FAILED)</option>
+              <option value="DENIED">Bị từ chối (DENIED)</option>
+              <option value="SUCCESS">Thành công (SUCCESS)</option>
+            </select>
+            <button class="btn btn-light btn-sm" type="button" id="btn-log-refresh">Làm mới</button>
+          </div>
+          <table class="table">
+            <thead>
+              <tr><th>Thời gian</th><th>Người dùng</th><th>Hành động</th><th>Kết quả</th><th>IP</th><th>Chi tiết</th></tr>
+            </thead>
+            <tbody id="logs-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>Mười Sáu Bank - Chỉ dành cho nhân viên được cấp quyền. Mọi thao tác đều được ghi nhật ký.</span>
+  </div>
+</footer>
+
+<script src="admin.js"></script>
+</body>
+</html>

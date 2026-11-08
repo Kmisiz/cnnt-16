@@ -1,0 +1,28 @@
+[Unit]
+Description=Muoi Sau Bank - Core Banking API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bankapp
+Group=bankapp
+WorkingDirectory=/opt/bank-app
+EnvironmentFile=-/etc/bank-app.env
+EnvironmentFile=-/opt/bank-app/.env
+ExecStart=/opt/bank-app/venv/bin/uvicorn main:app --host 10.10.10.20 --port 8080 --workers 2 --proxy-headers --forwarded-allow-ips=10.10.10.10
+Restart=always
+RestartSec=3
+
+StandardOutput=append:/var/log/bank-app.log
+StandardError=append:/var/log/bank-app.log
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/bank-app.log
+
+[Install]
+WantedBy=multi-user.target

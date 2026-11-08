@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mười Sáu Bank - Ngân hàng điện tử</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="/">
+      <span class="logo-mark">16</span>
+      <span class="logo-text">Mười Sáu Bank<small>Ngân hàng điện tử</small></span>
+    </a>
+    <div class="header-right" id="header-guest">
+      <span>Tổng đài 24/7: <strong>1900 6868</strong></span>
+    </div>
+    <div class="header-right hidden" id="header-user">
+      <span class="greeting">Xin chào, <strong id="user-name"></strong></span>
+      <button class="link-btn" id="btn-logout" type="button">Đăng xuất</button>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== ĐĂNG NHẬP ===================== -->
+<main id="view-login" class="hidden">
+  <div class="wrap login-layout">
+    <section class="login-info">
+      <h1>Ngân hàng điện tử Mười Sáu</h1>
+      <p>Tra cứu số dư, chuyển khoản trong hệ thống và theo dõi lịch sử giao dịch mọi lúc, mọi nơi.</p>
+
+      <div class="notice">
+        <h3>Cảnh báo lừa đảo</h3>
+        <ul>
+          <li>Mười Sáu Bank không bao giờ yêu cầu Quý khách cung cấp mật khẩu qua điện thoại, email hay tin nhắn.</li>
+          <li>Chỉ đăng nhập tại địa chỉ chính thức của ngân hàng. Kiểm tra biểu tượng ổ khóa trên thanh địa chỉ.</li>
+          <li>Không đăng nhập trên máy tính công cộng hoặc mạng Wi-Fi không rõ nguồn gốc.</li>
+        </ul>
+      </div>
+
+      <p class="muted small">Phiên đăng nhập sẽ tự động kết thúc sau 30 phút.</p>
+    </section>
+
+    <section class="login-box">
+      <h2>Đăng nhập</h2>
+      <form id="login-form" autocomplete="off" novalidate>
+        <label for="username">Tên đăng nhập</label>
+        <input id="username" name="username" type="text" maxlength="50" required autofocus>
+
+        <label for="password">Mật khẩu</label>
+        <div class="pw-field">
+          <input id="password" name="password" type="password" maxlength="128" required>
+          <button type="button" class="pw-toggle" id="pw-toggle">Hiện</button>
+        </div>
+
+        <p class="form-error hidden" id="login-error"></p>
+
+        <button type="submit" class="btn btn-primary btn-block" id="btn-login">Đăng nhập</button>
+      </form>
+      <div class="login-links">
+        <a href="#">Quên mật khẩu?</a>
+        <a href="#">Đăng ký dịch vụ</a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ===================== KHÁCH HÀNG ===================== -->
+<main id="view-app" class="hidden">
+  <div class="wrap app-layout">
+    <nav class="side-nav">
+      <a href="#overview" data-tab="overview" class="active">Tổng quan</a>
+      <a href="#transfer" data-tab="transfer">Chuyển khoản</a>
+      <a href="#history" data-tab="history">Lịch sử giao dịch</a>
+    </nav>
+
+    <div class="content">
+
+      <!-- Tổng quan -->
+      <section class="tab" id="tab-overview">
+        <h2 class="page-title">Tổng quan tài khoản</h2>
+
+        <div class="account-card">
+          <div class="account-head">
+            <span>Tài khoản thanh toán</span>
+            <span class="muted">VND</span>
+          </div>
+          <div class="account-no" id="acc-no">--</div>
+          <div class="balance-row">
+            <div>
+              <div class="muted small">Số dư khả dụng</div>
+              <div class="balance" id="acc-balance">--</div>
+            </div>
+            <button class="link-btn" type="button" id="btn-toggle-balance">Ẩn số dư</button>
+          </div>
+          <div class="account-holder" id="acc-holder"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Giao dịch gần đây</h3>
+            <a href="#history" data-tab="history">Xem tất cả</a>
+          </div>
+          <table class="table">
+            <thead><tr><th>Thời gian</th><th>Nội dung</th><th class="num">Số tiền</th></tr></thead>
+            <tbody id="recent-tx"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Chuyển khoản -->
+      <section class="tab hidden" id="tab-transfer">
+        <h2 class="page-title">Chuyển khoản trong Mười Sáu Bank</h2>
+
+        <div class="panel" id="transfer-step-input">
+          <form id="transfer-form" novalidate>
+            <label>Tài khoản nguồn</label>
+            <div class="readonly-field"><span id="tf-src"></span><span class="muted" id="tf-src-balance"></span></div>
+
+            <label for="tf-to">Số tài khoản nhận</label>
+            <input id="tf-to" type="text" inputmode="numeric" maxlength="20" required>
+            <div class="field-hint" id="tf-to-name"></div>
+
+            <label for="tf-amount">Số tiền (VND)</label>
+            <input id="tf-amount" type="text" inputmode="numeric" maxlength="15" required>
+            <div class="field-hint" id="tf-amount-words"></div>
+
+            <label for="tf-note">Nội dung chuyển khoản</label>
+            <input id="tf-note" type="text" maxlength="140">
+
+            <p class="form-error hidden" id="tf-error"></p>
+            <button type="submit" class="btn btn-primary">Tiếp tục</button>
+          </form>
+        </div>
+
+        <div class="panel hidden" id="transfer-step-confirm">
+          <h3>Xác nhận giao dịch</h3>
+          <dl class="summary">
+            <dt>Tài khoản nguồn</dt><dd id="cf-src"></dd>
+            <dt>Tài khoản nhận</dt><dd id="cf-to"></dd>
+            <dt>Tên người nhận</dt><dd id="cf-name"></dd>
+            <dt>Số tiền</dt><dd id="cf-amount" class="strong"></dd>
+            <dt>Nội dung</dt><dd id="cf-note"></dd>
+            <dt>Phí giao dịch</dt><dd>Miễn phí</dd>
+          </dl>
+          <p class="form-error hidden" id="cf-error"></p>
+          <div class="btn-row">
+            <button class="btn btn-light" type="button" id="btn-cf-back">Quay lại</button>
+            <button class="btn btn-primary" type="button" id="btn-cf-ok">Xác nhận chuyển</button>
+          </div>
+        </div>
+
+        <div class="panel hidden" id="transfer-step-done">
+          <h3 class="ok-title">Giao dịch thành công</h3>
+          <dl class="summary">
+            <dt>Mã giao dịch</dt><dd id="dn-id"></dd>
+            <dt>Thời gian</dt><dd id="dn-time"></dd>
+            <dt>Số tiền</dt><dd id="dn-amount" class="strong"></dd>
+            <dt>Người nhận</dt><dd id="dn-to"></dd>
+            <dt>Số dư còn lại</dt><dd id="dn-balance"></dd>
+          </dl>
+          <button class="btn btn-primary" type="button" id="btn-new-transfer">Thực hiện giao dịch khác</button>
+        </div>
+      </section>
+
+      <!-- Lịch sử -->
+      <section class="tab hidden" id="tab-history">
+        <h2 class="page-title">Lịch sử giao dịch</h2>
+        <div class="panel">
+          <table class="table">
+            <thead>
+              <tr><th>Thời gian</th><th>Mã GD</th><th>Tài khoản đối ứng</th><th>Nội dung</th><th class="num">Số tiền</th></tr>
+            </thead>
+            <tbody id="history-tx"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>&copy; 2026 Mười Sáu Bank. Dữ liệu trên hệ thống là dữ liệu giả lập phục vụ học tập.</span>
+    <span>Hội sở: 122 Hoàng Quốc Việt, Cầu Giấy, Hà Nội</span>
+  </div>
+</footer>
+
+<script src="assets/js/app.js"></script>
+</body>
+</html>
