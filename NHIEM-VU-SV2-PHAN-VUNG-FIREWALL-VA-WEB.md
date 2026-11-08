@@ -10,11 +10,11 @@ Hệ thống được triển khai trên Google Cloud Platform (GCP) trong mạn
 
 | Máy chủ | IP Nội bộ | External IP (Public) | Vai trò trong kiến trúc |
 | :--- | :--- | :--- | :--- |
-| **`vps0-web-public`** | `10.10.10.5` | **`34.124.217.241`** | **Public Web Tier:** Chạy Nginx HTTPS (TLS 1.3), phục vụ giao diện Web tĩnh Mười Sáu Bank (`/var/www/muoisau`). Người dùng Internet truy cập tại: **`https://34.124.217.241`**. |
+| **`vps0-web-public`** | `10.10.10.5` | **`34.124.217.241`** | **Public Web Tier:** Chạy Nginx HTTPS (TLS 1.3), phục vụ giao diện Web Mười Sáu Bank (`/var/www/muoisau`). Tên miền chính thức: **`https://muoisaubank16.duckdns.org`** (hoặc IP `https://34.124.217.241`). |
 | **`vps1-dmz-fw`** | `10.10.10.10` | `34.87.91.248` (DMZ) | **DMZ Firewall & WAF Tier:** Tường lửa trung gian + Nginx Layer 7 WAF & Rate Limiting (`5r/m` chống Brute-force `/api/login`), kiểm soát luồng dữ liệu từ `vps0` vào `vps2`. |
 | **`vps2-app-api`** | `10.10.10.20` | Không (None) | **Application Tier (SV3):** Chạy Core Banking API (FastAPI cổng `8080`). Chỉ nhận kết nối từ `vps1` (`10.10.10.10`). |
 | **`vps3-data-db`** | `10.10.10.30` | Không (None) | **Data Tier (SV3):** Chạy PostgreSQL 16 (cổng `5432`). Chỉ nhận kết nối từ `vps2` (`10.10.10.20`). |
-| **`vps4-mgmt-log`** | `10.10.10.40` | **`34.87.139.11`** | **Management & SIEM Tier (SV1 & SV4):** Bastion Host duy nhất được phép SSH (`22/tcp`) vào các máy nội bộ và thu thập Syslog tập trung (`514/udp`). |
+| **`vps4-mgmt-log`** | `10.10.10.40` | **`136.85.99.236`** | **Management & SIEM Tier (SV1 - Khánh & SV4 - Đức):** Bastion Host duy nhất được phép SSH (`22/tcp`) vào các máy nội bộ và thu thập Syslog tập trung (`514/udp`). |
 
 ---
 
@@ -24,10 +24,10 @@ Hiếu mở **PowerShell** trên máy tính cá nhân ở nhà và copy paste c�
   ```powershell
   ssh hieu@34.124.217.241
   ```
-  *(Hoặc nhảy qua Bastion Host: `ssh -J hieu@34.87.139.11 hieu@10.10.10.5`)*
+  *(Hoặc nhảy qua Bastion Host: `ssh -J hieu@136.85.99.236 hieu@10.10.10.5`)*
 - **Truy cập vào máy DMZ WAF (`vps1-dmz-fw`):**
   ```powershell
-  ssh -J hieu@34.87.139.11 hieu@10.10.10.10
+  ssh -J hieu@136.85.99.236 hieu@10.10.10.10
   ```
 
 ---
@@ -134,13 +134,26 @@ rm -rf cnnt-16
 git clone https://github.com/Kmisiz/cnnt-16.git
 ```
 
-### Bước 2: Tạo chứng chỉ số SSL/TLS (Hỗ trợ TLS 1.2 / TLS 1.3)
+### Bước 2: Kích hoạt chứng chỉ SSL/TLS Let's Encrypt (Certbot) chuẩn quốc tế
+Hệ thống sử dụng tên miền chính thức: **`muoisaubank16.duckdns.org`** (đã trỏ về IP `34.124.217.241`).
+
+**Cách 1: Cài đặt và cấp chứng chỉ số Let's Encrypt bằng Certbot (Khuyên dùng - Đã kích hoạt):**
+```bash
+sudo apt update && sudo apt install -y certbot python3-certbot-nginx
+
+# Chay Certbot cap chung chi tu dong cho Nginx voi domain muoisaubank16.duckdns.org
+sudo certbot --nginx -d muoisaubank16.duckdns.org
+```
+*(Certbot sẽ tự động xin chứng chỉ được tin cậy bởi mọi trình duyệt, hỗ trợ HTTPS TLS 1.3 và có ổ khóa xanh chuẩn thương mại).*
+
+**Cách 2: Phương án dự phòng bằng OpenSSL tự ký (Self-signed):**
+*(Chỉ dùng khi mạng không có internet hoặc chưa có tên miền)*
 ```bash
 sudo mkdir -p /etc/nginx/ssl
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout /etc/nginx/ssl/bank.key \
   -out /etc/nginx/ssl/bank.crt \
-  -subj "/C=VN/ST=Hanoi/L=Hanoi/O=MuoiSauBank/OU=ITSecurity/CN=muoisaubank.vn"
+  -subj "/C=VN/ST=Hanoi/L=Hanoi/O=MuoiSauBank/OU=ITSecurity/CN=muoisaubank16.duckdns.org"
 sudo chmod 600 /etc/nginx/ssl/bank.key
 ```
 
@@ -192,18 +205,18 @@ Sau khi triển khai xong, Hiếu (SV2) thực hiện các lệnh kiểm chứng
 
 2. **Chứng minh ẩn trang `/admin` bằng lỗi `404 Not Found`:**
    - Mở trình duyệt ẩn danh (chưa đăng nhập) hoặc đăng nhập tài khoản khách hàng `user1` (`User1@123`), sau đó gõ địa chỉ:  
-     👉 **`https://34.124.217.241/admin`**
-   - **Kết quả mong đợi:** Trình duyệt hiển thị trang trắng **`404 Not Found - nginx`** giống hệt như khi gõ một đường dẫn không tồn tại (`/trang-khong-ton-tai`).
+     👉 **`https://muoisaubank16.duckdns.org/admin`** *(hoặc `https://34.124.217.241/admin`)*
+   - **Kết quả mong đợi:** Trình duyệt hiển thị trang trắng **`404 Not Found - nginx`** giống hệt như khi gõ một đường dẫn không tồn tại (`/trang-khong-ton-tai`), kẻ tấn công hoàn toàn không biết phân hệ quản trị có tồn tại.
 
 3. **Chứng minh WAF chặn SQL Injection & Rate Limiting chặn Brute-force (KT2.1):**
    ```bash
-   # Test WAF chan SQLi truc tiep qua IP Public cua vps0:
-   curl -k -i "https://34.124.217.241/api/accounts?id=1%20UNION%20SELECT%20*--+"
+   # Test WAF chan SQLi truc tiep qua domain hoac IP:
+   curl -i "https://muoisaubank16.duckdns.org/api/accounts?id=1%20UNION%20SELECT%20*--+"
 
    # Test Rate Limiting chan Brute-force (>5 lan/phut) tren /api/login:
    for i in {1..8}; do
-     curl -k -s -o /dev/null -w "Lan $i: HTTP %{http_code}\n" \
-       -X POST https://34.124.217.241/api/login \
+     curl -s -o /dev/null -w "Lan $i: HTTP %{http_code}\n" \
+       -X POST https://muoisaubank16.duckdns.org/api/login \
        -H "Content-Type: application/json" \
        -d '{"username":"admin","password":"sai_mat_khau"}'
    done
