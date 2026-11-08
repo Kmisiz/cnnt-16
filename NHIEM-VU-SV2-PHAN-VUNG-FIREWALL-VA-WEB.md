@@ -14,7 +14,7 @@ Hệ thống được triển khai trên Google Cloud Platform (GCP) trong mạn
 | **`vps1-dmz-fw`** | `10.10.10.10` | `34.87.91.248` (DMZ) | **DMZ Firewall & WAF Tier:** Tường lửa trung gian + Nginx Layer 7 WAF & Rate Limiting (`5r/m` chống Brute-force `/api/login`), kiểm soát luồng dữ liệu từ `vps0` vào `vps2`. |
 | **`vps2-app-api`** | `10.10.10.20` | Không (None) | **Application Tier (SV3):** Chạy Core Banking API (FastAPI cổng `8080`). Chỉ nhận kết nối từ `vps1` (`10.10.10.10`). |
 | **`vps3-data-db`** | `10.10.10.30` | Không (None) | **Data Tier (SV3):** Chạy PostgreSQL 16 (cổng `5432`). Chỉ nhận kết nối từ `vps2` (`10.10.10.20`). |
-| **`vps4-mgmt-log`** | `10.10.10.40` | **`136.85.99.236`** | **Management & SIEM Tier (SV1 & SV4):** Bastion Host duy nhất được phép SSH (`22/tcp`) vào các máy nội bộ và thu thập Syslog tập trung (`514/udp`). |
+| **`vps4-mgmt-log`** | `10.10.10.40` | **`34.87.139.11`** | **Management & SIEM Tier (SV1 & SV4):** Bastion Host duy nhất được phép SSH (`22/tcp`) vào các máy nội bộ và thu thập Syslog tập trung (`514/udp`). |
 
 ---
 
@@ -24,10 +24,10 @@ Hiếu mở **PowerShell** trên máy tính cá nhân ở nhà và copy paste c�
   ```powershell
   ssh hieu@34.124.217.241
   ```
-  *(Hoặc nhảy qua Bastion Host: `ssh -J hieu@136.85.99.236 hieu@10.10.10.5`)*
+  *(Hoặc nhảy qua Bastion Host: `ssh -J hieu@34.87.139.11 hieu@10.10.10.5`)*
 - **Truy cập vào máy DMZ WAF (`vps1-dmz-fw`):**
   ```powershell
-  ssh -J hieu@136.85.99.236 hieu@10.10.10.10
+  ssh -J hieu@34.87.139.11 hieu@10.10.10.10
   ```
 
 ---

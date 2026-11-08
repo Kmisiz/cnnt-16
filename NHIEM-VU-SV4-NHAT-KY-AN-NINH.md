@@ -18,7 +18,7 @@ Hệ thống ghi nhận mọi biến động từ người dùng và tự độn
 ### 1.1. Lệnh PowerShell dành cho Đức (kết nối vào Database `vps3` từ máy tính ở nhà)
 Đức mở **PowerShell** trên máy tính cá nhân ở nhà và copy paste lệnh sau:
 ```powershell
-ssh -J duc@136.85.99.236 duc@10.10.10.30
+ssh -J duc@34.87.139.11 duc@10.10.10.30
 ```
 Khi vào được `vps3-data-db`, Đức có thể xem trực tiếp bảng `audit_logs` trong CSDL bằng lệnh:
 ```bash
