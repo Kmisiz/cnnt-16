@@ -47,11 +47,11 @@ Quản trị ──SSH──► vps4-mgmt-log       10.10.10.40  Bastion, rsyslo
 
 | Máy | Vùng | IP nội bộ | IP công khai | Dịch vụ chính |
 |---|---|---|---|---|
-| `vps0-web-public` | Công khai | 10.10.10.5 | Có | Nginx, TLS (Let's Encrypt), giao diện web, Wazuh agent |
-| `vps1-dmz-fw` | DMZ | 10.10.10.10 | `<có/không>` | Nginx WAF, giới hạn tần suất, Wazuh agent |
+| `vps0-web-public` | Công khai | 10.10.10.5 | 34.124.217.241 | Nginx, TLS (Let's Encrypt), giao diện web, Wazuh agent |
+| `vps1-dmz-fw` | DMZ | 10.10.10.10 | 34.87.91.248 | Nginx WAF, giới hạn tần suất, Wazuh agent |
 | `vps2-app-api` | Ứng dụng | 10.10.10.20 | Không | FastAPI (systemd `bank-app`), rsyslog chuyển log, Wazuh agent |
 | `vps3-data-db` | Dữ liệu | 10.10.10.30 | Không | PostgreSQL, Wazuh agent |
-| `vps4-mgmt-log` | Quản trị | 10.10.10.40 | Có | Bastion SSH, rsyslog tập trung, Wazuh all-in-one (agent cục bộ tự giám sát) |
+| `vps4-mgmt-log` | Quản trị | 10.10.10.40 | 34.87.139.11 | Bastion SSH, rsyslog tập trung, Wazuh all-in-one (agent cục bộ tự giám sát) |
 
 **Luật tường lửa chính** (mặc định chặn mọi kết nối đến; bảng đầy đủ nằm trong tài liệu của SV2 và trưởng nhóm):
 
