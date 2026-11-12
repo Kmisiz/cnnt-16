@@ -8,6 +8,7 @@ Van ho tro header "Authorization: Bearer" de kiem thu bang curl.
 
 import logging
 import os
+import re
 import sys
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
@@ -25,16 +26,24 @@ from pydantic import BaseModel, Field
 # ---------------------------------------------------------------------------
 # Cau hinh (doc tu bien moi truong, xem bank-app.env.example)
 # ---------------------------------------------------------------------------
+def _require_env(name: str) -> str:
+    """Bien bi mat khong co gia tri mac dinh: thieu thi dich vu khong khoi dong."""
+    value = os.getenv(name)
+    if not value:
+        raise RuntimeError(f"Thieu bien moi truong bat buoc {name} (xem bank-app.env.example)")
+    return value
+
+
 DB_CONFIG = {
     "host": os.getenv("DB_HOST", "10.10.10.30"),
     "port": int(os.getenv("DB_PORT", "5432")),
     "dbname": os.getenv("DB_NAME", "digital_bank"),
     "user": os.getenv("DB_USER", "bank_app"),
-    "password": os.getenv("DB_PASSWORD", "AppSecretPass_2026!"),
+    "password": _require_env("DB_PASSWORD"),
     "connect_timeout": 5,
 }
 
-JWT_SECRET = os.getenv("JWT_SECRET", "change-me-in-bank-app-env")
+JWT_SECRET = _require_env("JWT_SECRET")
 JWT_ALGORITHM = "HS256"
 SESSION_MINUTES = int(os.getenv("SESSION_MINUTES", "30"))
 COOKIE_NAME = "kn_session"
@@ -53,6 +62,7 @@ logger.addHandler(_handler)
 logger.propagate = False
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+_DUMMY_HASH = pwd_context.hash("khong-phai-mat-khau-that")
 bearer = HTTPBearer(auto_error=False)
 
 app = FastAPI(title="Kim Ngan Bank Core API", docs_url=None, redoc_url=None, openapi_url=None)
@@ -85,8 +95,24 @@ def client_ip(request: Request) -> str:
     return request.client.host if request.client else "-"
 
 
+# Dong log co dang  USER=.. | ACTION=.. | STATUS=.. | IP=.. | DETAILS=..  va decoder Wazuh bam vao
+# dang nay. Du lieu do nguoi dung nhap khong duoc chua dau phan cach "|", ky tu dieu khien
+# (gom xuong dong) hoac, o cac truong khong co khoang trang, ky tu trang.
+_LOG_TOKEN_UNSAFE = re.compile(r"[\s|\x00-\x1f\x7f]")   # USER, IP
+_LOG_TEXT_UNSAFE = re.compile(r"[|\x00-\x1f\x7f]")       # DETAILS
+
+
+def _log_token(value: object, limit: int) -> str:
+    return _LOG_TOKEN_UNSAFE.sub("_", str(value))[:limit]
+
+
+def _log_text(value: object, limit: int) -> str:
+    return _LOG_TEXT_UNSAFE.sub("_", str(value))[:limit]
+
+
 def audit(username: Optional[str], action: str, result: str, ip: str, details: str = "") -> None:
-    line = f"USER={username or '-'} | ACTION={action} | STATUS={result} | IP={ip} | DETAILS={details}"
+    line = (f"USER={_log_token(username or '-', 50)} | ACTION={action} | STATUS={result} | "
+            f"IP={_log_token(ip, 45)} | DETAILS={_log_text(details, 500)}")
     if result == "SUCCESS":
         logger.info(line)
     else:
@@ -95,7 +121,7 @@ def audit(username: Optional[str], action: str, result: str, ip: str, details: s
         with db() as conn, conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO audit_logs (username, action, status, client_ip, details) VALUES (%s, %s, %s, %s, %s)",
-                (username, action, result, ip, details[:500]),
+                (username, action, result, ip[:50], details[:500]),
             )
     except Exception as exc:  # khong de loi ghi log lam hong request
         logger.error("AUDIT_WRITE_ERROR %s", exc)
@@ -186,7 +212,7 @@ class LoginIn(BaseModel):
 
 class TransferIn(BaseModel):
     to_account: str = Field(pattern=r"^\d{6,20}$")
-    amount: Decimal = Field(gt=0, le=Decimal("500000000"))
+    amount: Decimal = Field(gt=0, le=Decimal("500000000"), decimal_places=2)
     note: str = Field(default="", max_length=140)
 
 
@@ -195,7 +221,7 @@ class CreateUserIn(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     full_name: str = Field(min_length=2, max_length=100)
     role: str = Field(pattern=r"^(customer|teller|admin)$")
-    initial_balance: Decimal = Field(default=Decimal("0"), ge=0)
+    initial_balance: Decimal = Field(default=Decimal("0"), ge=0, max_digits=15, decimal_places=2)
 
 
 class UserStatusIn(BaseModel):
@@ -217,7 +243,9 @@ def login(data: LoginIn, request: Request, response: Response):
         cur.execute("SELECT * FROM users WHERE username = %s", (data.username,))
         user = cur.fetchone()
 
-    if not user or not pwd_context.verify(data.password, user["password_hash"]):
+    # Luon chay verify (ke ca khi khong co user) de thoi gian phan hoi khong lo ten dang nhap co ton tai hay khong
+    password_ok = pwd_context.verify(data.password, user["password_hash"] if user else _DUMMY_HASH)
+    if not user or not password_ok:
         audit(data.username, "LOGIN", "FAILED", ip, "sai ten dang nhap hoac mat khau")
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Tên đăng nhập hoặc mật khẩu không đúng.")
     if not user["is_active"]:
