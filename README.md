@@ -12,12 +12,12 @@ Nhóm 4 người. Mỗi người có sản phẩm kỹ thuật riêng và nộp 
 
 | Họ tên | MSSV | Vai trò | Phụ trách |
 |---|---|---|---|
-| `<Họ tên>` | `<MSSV>` | Trưởng nhóm, SV1 | Kiến trúc và phân tích nguy cơ, hạ tầng GCP, Wazuh SIEM giám sát 5 máy (agent, FIM, rule, dashboard) và so sánh với rsyslog (phần mở rộng tự chọn), tích hợp, README |
+| `<Họ tên>` | `<MSSV>` | SV1 | Kiến trúc và phân tích nguy cơ, hạ tầng GCP, Wazuh SIEM giám sát 5 máy (agent, FIM, rule, dashboard) và so sánh với rsyslog (phần mở rộng tự chọn), tích hợp, README |
 | `<Họ tên>` | `<MSSV>` | SV2 | Phân vùng và lọc truy cập: UFW, luật VPC, Nginx trên vps0 và vps1 |
 | `<Họ tên>` | `<MSSV>` | SV3 | Xác thực, dữ liệu, sao lưu: backend vps2, PostgreSQL vps3, sao lưu mã hóa và phục hồi |
 | `<Họ tên>` | `<MSSV>` | SV4 | Kiểm thử chính sách và nhật ký: audit log ba tầng, luồng log thô rsyslog, chạy và lưu bằng chứng KT1–KT3 |
 
-Ranh giới giữa luồng log thô (SV4) và SIEM (trưởng nhóm) nằm ở mục 4. Tài liệu nhiệm vụ của SV4: `NHIEM-VU-SV4-NHAT-KY-AN-NINH.md`.
+Ranh giới giữa luồng log thô (SV4) và SIEM (SV1) nằm ở mục 4. Tài liệu nhiệm vụ của SV4: `NHIEM-VU-SV4-NHAT-KY-AN-NINH.md`.
 
 ## 2. Phạm vi và giả định
 
@@ -53,7 +53,7 @@ Quản trị ──SSH──► vps4-mgmt-log       10.10.10.40  Bastion, rsyslo
 | `vps3-data-db` | Dữ liệu | 10.10.10.30 | Không | PostgreSQL, Wazuh agent |
 | `vps4-mgmt-log` | Quản trị | 10.10.10.40 | 34.87.139.11 | Bastion SSH, rsyslog tập trung, Wazuh all-in-one (agent cục bộ tự giám sát) |
 
-**Luật tường lửa chính** (mặc định chặn mọi kết nối đến; bảng đầy đủ nằm trong tài liệu của SV2 và trưởng nhóm):
+**Luật tường lửa chính** (mặc định chặn mọi kết nối đến; bảng đầy đủ nằm trong tài liệu của SV2 và SV1):
 
 | Mã | Nguồn | Đích | Cổng | Hành động |
 |---|---|---|---|---|
@@ -63,7 +63,7 @@ Quản trị ──SSH──► vps4-mgmt-log       10.10.10.40  Bastion, rsyslo
 | FW-04 | vps1 | vps2 | TCP 8080 | Cho phép |
 | FW-05 | vps1 | vps3 | TCP 5432 | Chặn |
 | FW-06 | vps2 | vps3 | TCP 5432 | Cho phép |
-| FW-07 | vps4 | vps3 | TCP 5432 | Cho phép |
+| FW-07 | vps4 | vps3 | TCP 5432 | Chặn (sao lưu chạy ngay trên vps3) |
 | FW-08 | vps4 | vps0–vps3 | TCP 22 | Cho phép |
 | FW-09 | vps0–vps3 | vps4 | TCP 514 | Cho phép (rsyslog, chỉ TCP) |
 | FW-10 | vps0–vps3 | vps4 | TCP 1514 | Cho phép (Wazuh agent gửi sự kiện) |
@@ -87,7 +87,7 @@ vps0, vps1, vps3: Wazuh agent ─TCP 1514─► vps4 (log hệ thống, FIM)
 | Giữ gì | Nguyên văn từng dòng log | Alert theo rule, FIM, tương quan sự kiện |
 | Phạm vi | Log ứng dụng (vps2) và log xác thực | Cả 5 máy: log hệ thống, FIM, log ứng dụng |
 | Dùng để | Bằng chứng gốc cho KT3, điều tra khi dashboard hỏng | Phát hiện và cảnh báo |
-| Phụ trách | SV4 | Trưởng nhóm |
+| Phụ trách | SV4 | SV1 |
 
 Nguyên tắc để hai luồng thật sự độc lập:
 - Cùng đọc một file nguồn, không đọc của nhau. Hỏng một luồng không làm hỏng luồng kia.
@@ -95,7 +95,7 @@ Nguyên tắc để hai luồng thật sự độc lập:
 - Không bật bộ thu syslog của Wazuh trên vps4 vì cùng dùng cổng 514 với rsyslog.
 - Không bật FIM trên thư mục log thô vì nó đổi liên tục và sẽ sinh alert liên tục.
 - Đĩa vps4 dùng chung, nên cả hai luồng cần logrotate và theo dõi `df -h`.
-- **Hợp đồng định dạng log:** decoder của Wazuh bám vào dòng `USER=… | ACTION=… | STATUS=… | IP=… | DETAILS=…` của `bank-app.log`. Đổi định dạng phải báo trưởng nhóm trước.
+- **Hợp đồng định dạng log:** decoder của Wazuh bám vào dòng `USER=… | ACTION=… | STATUS=… | IP=… | DETAILS=…` của `bank-app.log`. Đổi định dạng phải báo SV1 trước.
 - Đối soát: sau mỗi bài thử, so số sự kiện ở log thô, `audit_logs` và Wazuh. Số liệu lệch là dữ liệu so sánh độ phủ (chi tiết ở tài liệu SV4).
 
 ## 5. Cấu trúc thư mục
