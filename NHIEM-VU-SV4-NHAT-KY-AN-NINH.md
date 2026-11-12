@@ -98,8 +98,11 @@ sudo sed -i 's/^#input(type="imtcp" port="514")/input(type="imtcp" port="514")/'
 
 cat << 'EOF' | sudo tee /etc/rsyslog.d/10-central-bank.conf
 $template RemoteLogs,"/var/log/central-bank/%HOSTNAME%/%PROGRAMNAME%.log"
-# Chỉ ghi log đến từ máy khác, không ghi lặp log cục bộ của vps4
-if ($fromhost-ip != '127.0.0.1') then ?RemoteLogs
+# Log đến từ máy khác chỉ ghi vào kho central-bank; "stop" để không chép lặp vào /var/log/syslog
+if ($fromhost-ip != '127.0.0.1') then {
+    action(type="omfile" dynaFile="RemoteLogs")
+    stop
+}
 EOF
 
 sudo mkdir -p /var/log/central-bank
@@ -147,6 +150,8 @@ sudo rsyslogd -N1 && sudo systemctl restart rsyslog
 ```
 
 Hàng đợi đĩa giữ tin khi vps4 tạm mất kết nối và gửi lại khi kết nối trở lại. Phải kiểm chứng bằng thử nghiệm S4 ở mục 6, không tin vào cấu hình. `Tag="bank-app"` quyết định tên file nhận ở vps4 (`/var/log/central-bank/vps2-app-api/bank-app.log`). `reopenOnTruncate="on"` bắt rsyslog đọc lại từ đầu khi file bị cắt rỗng; cần có vì logrotate của vps2 dùng `copytruncate` (mục 4.3).
+
+> Lưu ý: TCP thường không có xác nhận ở tầng ứng dụng. Khi rsyslog trên vps4 khởi động lại, kết nối cũ bị đóng nhưng vps2 chỉ phát hiện ra ở lần ghi kế tiếp, nên dòng đầu tiên gửi sau đó có thể mất. Đã quan sát được hiện tượng này trên hệ thống (một dòng health check lúc 14:57:57 UTC ngày 12/11/2026). Phương án đề xuất là RELP (`omrelp`/`imrelp`), có xác nhận từng bản tin. Ghi giới hạn này vào báo cáo cùng kết quả S4.
 
 ### 4.3. Xoay vòng log
 

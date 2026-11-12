@@ -1,0 +1,11 @@
+/var/log/central-bank/*/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    postrotate
+        systemctl kill -s HUP rsyslog.service >/dev/null 2>&1 || true
+    endscript
+}
