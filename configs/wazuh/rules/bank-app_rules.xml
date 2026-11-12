@@ -1,0 +1,115 @@
+<!--
+  =============================================================================
+  Rules: bank-app (Ngân hàng Số Mười Sáu – Core Banking API)
+  Triển khai: vps4, /var/ossec/etc/rules/bank-app_rules.xml
+  Phụ thuộc : decoder "bank-app" (configs/wazuh/decoders/bank-app_decoders.xml)
+
+  Dải ID dành riêng: 100100–100199
+    100100        Rule gốc, nhận diện bản ghi audit (level 0, không sinh cảnh báo)
+    100101–100109 Xác thực
+    100110–100119 Kiểm soát truy cập
+    100120–100129 Thao tác quản trị tài khoản
+    100130–100139 Giao dịch
+
+  Thang mức độ:
+    3      Sự kiện thông tin, phục vụ truy vết
+    5–7    Sự kiện cần chú ý
+    8      Truy cập trái phép bị chặn
+    10     Dấu hiệu tấn công, cần điều tra ngay
+
+  Gắn nhãn tuân thủ PCI DSS v3.2.1 yêu cầu 10.2 (ghi nhận sự kiện kiểm toán)
+  và MITRE ATT&CK khi ánh xạ rõ ràng.
+  =============================================================================
+-->
+<group name="bank_app,">
+
+  <!-- Rule gốc: mọi bản ghi audit đã được decoder bank-app phân tích -->
+  <rule id="100100" level="0">
+    <decoded_as>bank-app</decoded_as>
+    <description>Bank API: audit event.</description>
+  </rule>
+
+  <!-- ======================== Xác thực ======================== -->
+
+  <rule id="100101" level="3">
+    <if_sid>100100</if_sid>
+    <action>LOGIN</action>
+    <status>SUCCESS</status>
+    <description>Bank API: Successful login for user $(dstuser) from $(srcip).</description>
+    <group>authentication_success,pci_dss_10.2.5,</group>
+  </rule>
+
+  <rule id="100102" level="5">
+    <if_sid>100100</if_sid>
+    <action>LOGIN</action>
+    <status>FAILED</status>
+    <description>Bank API: Login failed for user $(dstuser) from $(srcip).</description>
+    <group>authentication_failed,pci_dss_10.2.4,pci_dss_10.2.5,</group>
+  </rule>
+
+  <rule id="100103" level="7">
+    <if_sid>100100</if_sid>
+    <action>LOGIN</action>
+    <status>DENIED</status>
+    <description>Bank API: Login attempt on locked account $(dstuser) from $(srcip).</description>
+    <group>authentication_failed,pci_dss_10.2.4,pci_dss_10.2.5,</group>
+  </rule>
+
+  <!--
+    Tương quan brute-force: 4 lần đăng nhập thất bại từ cùng một IP trong 60 giây.
+    Ngưỡng 4 được chọn vì WAF trên vps1 trả HTTP 429 từ yêu cầu /api/login thứ 5
+    (limit_req 5r/m, burst=3); ngưỡng cao hơn sẽ không bao giờ đạt tới backend.
+  -->
+  <rule id="100104" level="10" frequency="4" timeframe="60">
+    <if_matched_sid>100102</if_matched_sid>
+    <same_srcip />
+    <description>Bank API: Multiple login failures from $(srcip) (4 in 60s) - possible brute-force attack.</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+    <group>authentication_failures,pci_dss_10.2.4,pci_dss_10.2.5,pci_dss_11.4,</group>
+  </rule>
+
+  <!-- =================== Kiểm soát truy cập =================== -->
+
+  <rule id="100110" level="8">
+    <if_sid>100100</if_sid>
+    <action>RBAC</action>
+    <status>DENIED</status>
+    <description>Bank API: Access denied - user $(dstuser) requested a resource outside the assigned role (RBAC) from $(srcip).</description>
+    <group>access_denied,pci_dss_10.2.4,</group>
+  </rule>
+
+  <rule id="100111" level="8">
+    <if_sid>100100</if_sid>
+    <action>ADMIN_PATH_PROBE</action>
+    <description>Bank API: Unauthorized attempt to access the administration area from $(srcip).</description>
+    <group>access_denied,pci_dss_10.2.4,</group>
+  </rule>
+
+  <rule id="100112" level="6">
+    <if_sid>100100</if_sid>
+    <action>TOKEN_INVALID</action>
+    <description>Bank API: Invalid or expired session token presented from $(srcip).</description>
+    <group>invalid_access,pci_dss_10.2.4,</group>
+  </rule>
+
+  <!-- ============== Thao tác quản trị tài khoản ============== -->
+
+  <rule id="100120" level="5">
+    <if_sid>100100</if_sid>
+    <action>^CREATE_USER$|^LOCK_USER$|^UNLOCK_USER$</action>
+    <description>Bank API: Privileged account change ($(action)) performed by $(dstuser).</description>
+    <group>account_changed,pci_dss_10.2.2,pci_dss_10.2.5,</group>
+  </rule>
+
+  <!-- ======================== Giao dịch ======================= -->
+
+  <rule id="100130" level="3">
+    <if_sid>100100</if_sid>
+    <action>TRANSFER</action>
+    <status>FAILED</status>
+    <description>Bank API: Fund transfer rejected for user $(dstuser).</description>
+  </rule>
+
+</group>

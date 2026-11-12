@@ -1,0 +1,32 @@
+<!--
+  =============================================================================
+  Decoder: bank-app
+  Nguồn log : vps2-app-api, /var/log/bank-app.log (hàm audit() của FastAPI)
+  Triển khai: vps4, /var/ossec/etc/decoders/bank-app_decoders.xml
+  Thu thập  : nhóm agent "app" (configs/wazuh/groups/app/agent.conf)
+
+  Định dạng bản ghi audit:
+    [YYYY-MM-DD HH:MM:SS,mmm] LEVEL bank-api USER=<u> | ACTION=<a> | STATUS=<s> | IP=<ip> | DETAILS=<text>
+
+  Trường đầu ra:
+    dstuser    tài khoản thực hiện hoặc bị tác động ("-" nếu chưa xác thực)
+    action     loại nghiệp vụ: LOGIN, TRANSFER, RBAC, ADMIN_PATH_PROBE, TOKEN_INVALID, ...
+    status     kết quả: SUCCESS | FAILED | DENIED
+    srcip      IP máy khách (X-Real-IP do vps0 chuyển xuống)
+    extra_data mô tả chi tiết
+
+  Các dòng access log của uvicorn ("INFO:     <ip>:<port> - ...") không khớp prematch
+  và được bỏ qua có chủ đích.
+  Hợp đồng định dạng: thay đổi chuỗi log trong backend/main.py phải cập nhật decoder này.
+  =============================================================================
+-->
+
+<decoder name="bank-app">
+  <prematch type="pcre2">^\[\d{4}-\d{2}-\d{2} [\d:,]+\] \w+ bank-api </prematch>
+</decoder>
+
+<decoder name="bank-app-fields">
+  <parent>bank-app</parent>
+  <regex type="pcre2">USER=(\S+) \| ACTION=(\S+) \| STATUS=(\S+) \| IP=(\S+) \| DETAILS=(.*)$</regex>
+  <order>dstuser, action, status, srcip, extra_data</order>
+</decoder>
